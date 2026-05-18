@@ -9,7 +9,7 @@ COPY requirements.txt .
 
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY bulk_download.py .
+COPY *.py .
 
 CMD ["python", "bulk_download.py"]
 
