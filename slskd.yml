@@ -1,0 +1,11 @@
+soulseek:
+  username: "thanhtest"
+  password: "thanhtest"
+
+web:
+  authentication:
+    disabled: true
+
+directories:
+  downloads: /downloads
+

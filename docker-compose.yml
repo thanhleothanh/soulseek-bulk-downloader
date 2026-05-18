@@ -1,0 +1,39 @@
+version: '3.8'
+
+services:
+  slskd:
+    image: ghcr.io/slskd/slskd:latest
+    container_name: slskd-server
+    environment:
+      - TZ=Asia/Ho_Chi_Minh
+    volumes:
+      - ./slskd.yml:/app/slskd.yml:ro
+      - ./downloads:/downloads
+      - ./slskd-data:/app/data
+    ports:
+      - "5030:5030"
+      - "50300:50300"
+    networks:
+      - slsk-net
+    restart: unless-stopped
+
+  downloader:
+    build:
+      context: ./downloader
+      dockerfile: Dockerfile
+    container_name: soulseek-bulk-downloader
+    depends_on:
+      - slskd
+    command: sh -c "sleep 15 && python bulk_download.py"
+    environment:
+      - SLSKD_HOST=http://slskd:5030
+      - SLSKD_API_KEY=none 
+    volumes:
+      - ./songs.txt:/app/songs.txt
+    networks:
+      - slsk-net
+
+networks:
+  slsk-net:
+    driver: bridge
+
