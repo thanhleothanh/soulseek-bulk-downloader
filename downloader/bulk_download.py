@@ -22,7 +22,7 @@ def search_and_download(song_query):
         search_id = search_job.get("id")
     except Exception as e:
         print(f"❌ Failed to create search for '{song_query}': {e}")
-        return
+        return False
 
     print("⏳ Waiting 15 seconds for Soulseek to collect results...")
     time.sleep(15)
@@ -31,11 +31,11 @@ def search_and_download(song_query):
         responses = client.searches.search_responses(search_id)
     except Exception as e:
         print(f"❌ Failed to get results for '{song_query}': {e}")
-        return
+        return False
 
     if not responses:
         print(f"⚠️ No results found for '{song_query}'")
-        return
+        return False
 
     # Debug: print first file structure to check field names
     if responses and responses[0].get("files"):
@@ -77,12 +77,13 @@ def search_and_download(song_query):
                     client.transfers.enqueue(username=username, files=[file_payload])
                     
                     print(f"📥 Successfully added to download queue!")
-                    return # Exit to move to next song in list
+                    return True # Exit to move to next song in list
                 except Exception as e:
                     print(f"❌ Failed to enqueue (trying next file): {e}")
                     continue
 
     print(f"❌ No FLAC or MP3 {TARGET_BITRATE}kbps file found for '{song_query}'.")
+    return False
 
 def main():
     if not os.path.exists(TEXT_FILE_PATH):
@@ -95,9 +96,27 @@ def main():
 
     print(f"📋 Loaded {len(songs)} songs from '{TEXT_FILE_PATH}'. Starting FLAC or MP3 320kbps scan...")
 
+    successful = []
+    failed = []
+
     for song in songs:
-        search_and_download(song)
+        if search_and_download(song):
+            successful.append(song)
+        else:
+            failed.append(song)
         time.sleep(2) 
+
+    # Print summary log
+    print("\n" + "="*50)
+    print("📊 DOWNLOAD SUMMARY")
+    print("="*50)
+    print(f"✅ Successfully enqueued ({len(successful)}):")
+    for s in successful:
+        print(f"{s}")
+    print(f"\n❌ Failed to find/enqueue ({len(failed)}):")
+    for f in failed:
+        print(f"{f}")
+    print("="*50)
 
     print("\n🎉 Scan complete! Check slskd Web UI at http://localhost:5030 to monitor download progress.")
 

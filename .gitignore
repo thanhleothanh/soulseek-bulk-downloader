@@ -1,3 +1,5 @@
 downloads/*
 slskd-data/*
 songs.txt
+*.log
+logs/
