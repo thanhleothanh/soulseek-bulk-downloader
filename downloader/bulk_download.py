@@ -24,65 +24,70 @@ def search_and_download(song_query):
         print(f"❌ Failed to create search for '{song_query}': {e}")
         return False
 
-    print("⏳ Waiting 15 seconds for Soulseek to collect results...")
-    time.sleep(15)
-    
-    try:
-        responses = client.searches.search_responses(search_id)
-    except Exception as e:
-        print(f"❌ Failed to get results for '{song_query}': {e}")
-        return False
+    max_retries = 3
+    wait_times = [15, 25, 35]
 
-    if not responses:
-        print(f"⚠️ No results found for '{song_query}'")
-        return False
-
-    # Debug: print first file structure to check field names
-    if responses and responses[0].get("files"):
-        first_file = responses[0]["files"][0]
-        print(f"  🔍 Debug - First file keys: {list(first_file.keys())}")
-        print(f"  🔍 Debug - First file: {first_file}")
-
-    # Iterate through search results
-    for response in responses:
-        username = response.get("username")
-        files = response.get("files", [])
+    for attempt in range(max_retries):
+        wait_time = wait_times[attempt]
+        print(f"⏳ Attempt {attempt + 1}/{max_retries} - Waiting {wait_time}s for Soulseek to collect results...")
+        time.sleep(wait_time)
         
-        for file in files:
-            file_filename = file.get("filename", "")
-            file_id = file.get("id")
-            file_size = file.get("size", 0)
-            file_bitrate = file.get("bitRate") or file.get("bitrate")
+        try:
+            responses = client.searches.search_responses(search_id)
+        except Exception as e:
+            print(f"❌ Failed to get results for '{song_query}': {e}")
+            continue
 
-            file_ext = file_filename.lower().split(".")[-1]
-            is_flac = file_ext == "flac"
-            is_mp3_320 = file_ext == "mp3" and file_bitrate == TARGET_BITRATE
+        if not responses:
+            print(f"⚠️ No results found for '{song_query}' (Attempt {attempt + 1})")
+            continue
 
-            # Debug: print file info to check response structure
-            if file_ext in ["mp3", "flac"]:
-                print(f"  📄 Found {file_ext.upper()}: {os.path.basename(file_filename)} | bitrate={file_bitrate}")
+        # Debug: print first file structure to check field names
+        if attempt == 0 and responses and responses[0].get("files"):
+            first_file = responses[0]["files"][0]
+            print(f"  🔍 Debug - First file keys: {list(first_file.keys())}")
+            print(f"  🔍 Debug - First file: {first_file}")
 
-            # FILTER: Accept FLAC or MP3 320kbps
-            if is_flac or is_mp3_320:
-                print(f"✅ Found {file_ext.upper()} match: {os.path.basename(file_filename)} from user '{username}'")
-                
-                try:
-                    file_payload = {
-                        "id": file_id,
-                        "filename": file_filename,
-                        "size": file_size
-                    }
+        # Iterate through search results
+        for response in responses:
+            username = response.get("username")
+            files = response.get("files", [])
+            
+            for file in files:
+                file_filename = file.get("filename", "")
+                file_id = file.get("id")
+                file_size = file.get("size", 0)
+                file_bitrate = file.get("bitRate") or file.get("bitrate")
+
+                file_ext = file_filename.lower().split(".")[-1]
+                is_flac = file_ext == "flac"
+                is_mp3_320 = file_ext == "mp3" and file_bitrate == TARGET_BITRATE
+
+                # Debug: print file info to check response structure
+                if file_ext in ["mp3", "flac"]:
+                    print(f"  📄 Found {file_ext.upper()}: {os.path.basename(file_filename)} | bitrate={file_bitrate}")
+
+                # FILTER: Accept FLAC or MP3 320kbps
+                if is_flac or is_mp3_320:
+                    print(f"✅ Found {file_ext.upper()} match: {os.path.basename(file_filename)} from user '{username}'")
                     
-                    # Enqueue download
-                    client.transfers.enqueue(username=username, files=[file_payload])
-                    
-                    print(f"📥 Successfully added to download queue!")
-                    return True # Exit to move to next song in list
-                except Exception as e:
-                    print(f"❌ Failed to enqueue (trying next file): {e}")
-                    continue
+                    try:
+                        file_payload = {
+                            "id": file_id,
+                            "filename": file_filename,
+                            "size": file_size
+                        }
+                        
+                        # Enqueue download
+                        client.transfers.enqueue(username=username, files=[file_payload])
+                        
+                        print(f"📥 Successfully added to download queue!")
+                        return True # Exit to move to next song in list
+                    except Exception as e:
+                        print(f"❌ Failed to enqueue (trying next file): {e}")
+                        continue
 
-    print(f"❌ No FLAC or MP3 {TARGET_BITRATE}kbps file found for '{song_query}'.")
+    print(f"❌ No FLAC or MP3 {TARGET_BITRATE}kbps file found for '{song_query}' after {max_retries} attempts.")
     return False
 
 def main():
