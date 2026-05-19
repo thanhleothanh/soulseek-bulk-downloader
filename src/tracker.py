@@ -1,9 +1,12 @@
-import os
 import time
 
 
-TRANSFER_CHECK_DELAY = 5
-SUCCESS_STATES = {"Queued", "InProgress", "Complete", "Initializing", "Completed, Succeeded"}
+TRANSFER_CHECK_DELAY = 10
+SUCCESS_STATES = {
+    "Initializing",
+    "InProgress",
+    "Completed, Succeeded",
+}
 
 
 class ResultTracker:
@@ -29,7 +32,7 @@ class ResultTracker:
                     final_successful.append(song)
                 else:
                     final_failed.append(song)
-                    print(f"  ⚠️ {song} - Transfer state: {state}")
+                    print(f"[{song}] ⚠️ Transfer state: {state}")
         except Exception as e:
             print(f"❌ Failed to fetch transfers: {e}")
             final_successful = list(enqueued.keys())
