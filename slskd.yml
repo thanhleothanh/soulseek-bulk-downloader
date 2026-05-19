@@ -1,6 +1,8 @@
 soulseek:
   username: "thanhtest"
   password: "thanhtest"
+  distributed_network:
+    disabled: true
 
 web:
   authentication:
@@ -8,4 +10,20 @@ web:
 
 directories:
   downloads: /downloads
+
+shares:
+  directories: []
+
+transfers:
+  upload:
+    slots: 1
+  download:
+    slots: 20
+
+throttling:
+  search:
+    incoming:
+      concurrency: 1
+      circuit_breaker: 100
+      response_file_limit: 100
 

@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   slskd:
     image: ghcr.io/slskd/slskd:latest
@@ -16,6 +14,14 @@ services:
     networks:
       - slsk-net
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
 
   downloader:
     build:
