@@ -73,9 +73,6 @@ Leave it blank (`TARGET_BITRATES=`) to accept all MP3 bitrates. FLAC files are a
 | `SLSKD_API_KEY` | `none` | API key (if enabled in slskd) |
 | `TARGET_BITRATES` | `320` | Comma-separated MP3 bitrates to accept (blank = all) |
 | `MAX_WORKERS` | `10` | Concurrent song searches |
-| `MAX_RETRIES` | `3` | Search retry attempts |
-| `WAIT_TIMES` | `15,25,35` | Seconds to wait between retries |
-| `TRANSFER_CHECK_DELAY` | `5` | Seconds to wait before verifying transfers |
 
 ## File Structure
 

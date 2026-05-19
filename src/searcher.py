@@ -4,8 +4,7 @@ import time
 
 TARGET_BITRATES_RAW = os.environ.get("TARGET_BITRATES", "320").strip()
 TARGET_BITRATES = [int(x) for x in TARGET_BITRATES_RAW.split(",") if x.strip()] if TARGET_BITRATES_RAW else []
-MAX_RETRIES = int(os.environ.get("MAX_RETRIES", "3"))
-WAIT_TIMES = [int(x) for x in os.environ.get("WAIT_TIMES", "15,25,35").split(",")]
+SEARCH_WAIT_SECONDS = 15
 
 
 class SongSearcher:
@@ -21,31 +20,33 @@ class SongSearcher:
             print(f"❌ Failed to create search for '{song_query}': {e}")
             return None
 
-        for attempt in range(MAX_RETRIES):
-            wait_time = WAIT_TIMES[attempt]
-            print(f"⏳ Attempt {attempt + 1}/{MAX_RETRIES} - Waiting {wait_time}s for Soulseek to collect results...")
-            time.sleep(wait_time)
+        print(f"⏳ Waiting {SEARCH_WAIT_SECONDS}s for Soulseek to collect results...")
+        time.sleep(SEARCH_WAIT_SECONDS)
 
-            try:
-                responses = self._client.search_responses(search_id)
-            except Exception as e:
-                print(f"❌ Failed to get results for '{song_query}': {e}")
-                continue
+        try:
+            responses = self._client.search_responses(search_id)
+        except Exception as e:
+            print(f"❌ Failed to get results for '{song_query}': {e}")
+            return None
 
-            if not responses:
-                print(f"⚠️ No results found for '{song_query}' (Attempt {attempt + 1})")
-                continue
+        if not responses:
+            print(f"⚠️ No results found for '{song_query}'")
+            return None
 
-            if attempt == 0 and responses and responses[0].get("files"):
-                first_file = responses[0]["files"][0]
-                print(f"  🔍 Debug - First file keys: {list(first_file.keys())}")
-                print(f"  🔍 Debug - First file: {first_file}")
+        format_counts = {"mp3": 0, "flac": 0, "m4a": 0}
+        for r in responses:
+            for f in r.get("files", []):
+                ext = f.get("filename", "").lower().split(".")[-1]
+                if ext in format_counts:
+                    format_counts[ext] += 1
 
-            result = self._find_matching_file(responses)
-            if result:
-                return result
+        print(f"  📊 Found {len(responses)} responses | FLAC={format_counts['flac']}, MP3={format_counts['mp3']}, M4A={format_counts['m4a']}")
 
-        print(f"❌ No matching file found for '{song_query}' after {MAX_RETRIES} attempts.")
+        result = self._find_matching_file(responses)
+        if result:
+            return result
+
+        print(f"❌ No matching file found for '{song_query}'.")
         return None
 
     def _find_matching_file(self, responses):

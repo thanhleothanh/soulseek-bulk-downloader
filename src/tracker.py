@@ -2,7 +2,7 @@ import os
 import time
 
 
-TRANSFER_CHECK_DELAY = int(os.environ.get("TRANSFER_CHECK_DELAY", "5"))
+TRANSFER_CHECK_DELAY = 5
 SUCCESS_STATES = {"Queued", "InProgress", "Complete", "Initializing", "Completed, Succeeded"}
 
 
