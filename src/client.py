@@ -19,6 +19,6 @@ class ThreadSafeClient:
         with self._lock:
             return self._client.transfers.enqueue(username=username, files=files)
 
-    def get_all_transfers(self):
+    def get_all_downloads(self):
         with self._lock:
-            return self._client.transfers.get_all()
+            return self._client.transfers.get_all_downloads()

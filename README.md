@@ -14,7 +14,17 @@ A Docker-based bulk music downloader that searches and downloads tracks from the
 
 ## Quick Start
 
-1. Create `songs.txt` from the example file:
+1. Run the setup script (first time only):
+   ```bash
+   ./scripts/setup.sh
+   ```
+
+2. Create `.env` from the example file (optional, defaults are provided):
+   ```bash
+   cp .env.example .env
+   ```
+
+3. Create `songs.txt` from the example file:
    ```bash
    cp songs.txt.example songs.txt
    ```
@@ -27,7 +37,7 @@ A Docker-based bulk music downloader that searches and downloads tracks from the
 
 3. Start the services:
    ```bash
-   ./run.sh
+   ./scripts/run.sh
    ```
 
 3. Monitor progress:
@@ -39,20 +49,21 @@ A Docker-based bulk music downloader that searches and downloads tracks from the
 
 ## Configuration
 
+All settings are managed via `.env` at the project root. Copy `.env.example` to `.env` and adjust as needed.
+
 ### slskd Settings
 
 Edit `slskd.yml` to configure your Soulseek username, password, and download directory.
 
 ### Quality Filter
 
-Edit `downloader/bulk_download.py` to change the quality filter:
+Edit `.env` to change accepted MP3 bitrates:
 
-```python
-TARGET_FORMATS = [".mp3", ".flac"]
-TARGET_BITRATE = 320
+```
+TARGET_BITRATES=320,256
 ```
 
-Current logic: accept FLAC (any quality) OR MP3 at exactly 320kbps.
+Leave it blank (`TARGET_BITRATES=`) to accept all MP3 bitrates. FLAC files are always accepted regardless of this setting.
 
 ### Environment Variables
 
@@ -60,6 +71,11 @@ Current logic: accept FLAC (any quality) OR MP3 at exactly 320kbps.
 |---|---|---|
 | `SLSKD_HOST` | `http://slskd:5030` | slskd API endpoint |
 | `SLSKD_API_KEY` | `none` | API key (if enabled in slskd) |
+| `TARGET_BITRATES` | `320` | Comma-separated MP3 bitrates to accept (blank = all) |
+| `MAX_WORKERS` | `10` | Concurrent song searches |
+| `MAX_RETRIES` | `3` | Search retry attempts |
+| `WAIT_TIMES` | `15,25,35` | Seconds to wait between retries |
+| `TRANSFER_CHECK_DELAY` | `5` | Seconds to wait before verifying transfers |
 
 ## File Structure
 
@@ -67,14 +83,24 @@ Current logic: accept FLAC (any quality) OR MP3 at exactly 320kbps.
 .
 ├── docker-compose.yml      # Docker services definition
 ├── slskd.yml               # slskd configuration
+├── .env                    # Environment configuration (create from .env.example)
+├── .env.example            # Example template for .env
 ├── songs.txt               # List of songs to search (one per line)
 ├── songs.txt.example       # Example template for songs.txt
+├── Dockerfile              # Docker image definition
+├── requirements.txt        # Python dependencies
 ├── downloads/              # Downloaded files
 ├── slskd-data/             # slskd persistent data
-└── downloader/
-    ├── Dockerfile
-    ├── bulk_download.py    # Main download script
-    └── requirements.txt    # Python dependencies
+├── scripts/
+│   ├── setup.sh            # One-time setup (creates required folders)
+│   ├── run.sh              # Start/rebuild and run the downloader
+│   ├── clean-up.sh         # Stop containers and wipe data
+│   └── flatten-downloads.sh # Flatten downloaded files
+└── src/
+    ├── main.py             # Main download script
+    ├── searcher.py         # Song search logic
+    ├── client.py           # Thread-safe slskd API wrapper
+    └── tracker.py          # Transfer status verification
 ```
 
 ## Notes
@@ -88,5 +114,5 @@ Current logic: accept FLAC (any quality) OR MP3 at exactly 320kbps.
 To stop containers and remove all downloads and slskd data:
 
 ```bash
-./clean-up.sh
+./scripts/clean-up.sh
 ```

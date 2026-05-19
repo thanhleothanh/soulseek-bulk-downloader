@@ -1,5 +1,11 @@
 import os
-from config import MAX_RETRIES, WAIT_TIMES, TARGET_BITRATE
+import time
+
+
+TARGET_BITRATES_RAW = os.environ.get("TARGET_BITRATES", "320").strip()
+TARGET_BITRATES = [int(x) for x in TARGET_BITRATES_RAW.split(",") if x.strip()] if TARGET_BITRATES_RAW else []
+MAX_RETRIES = int(os.environ.get("MAX_RETRIES", "3"))
+WAIT_TIMES = [int(x) for x in os.environ.get("WAIT_TIMES", "15,25,35").split(",")]
 
 
 class SongSearcher:
@@ -18,7 +24,6 @@ class SongSearcher:
         for attempt in range(MAX_RETRIES):
             wait_time = WAIT_TIMES[attempt]
             print(f"⏳ Attempt {attempt + 1}/{MAX_RETRIES} - Waiting {wait_time}s for Soulseek to collect results...")
-            import time
             time.sleep(wait_time)
 
             try:
@@ -40,7 +45,7 @@ class SongSearcher:
             if result:
                 return result
 
-        print(f"❌ No FLAC or MP3 {TARGET_BITRATE}kbps file found for '{song_query}' after {MAX_RETRIES} attempts.")
+        print(f"❌ No matching file found for '{song_query}' after {MAX_RETRIES} attempts.")
         return None
 
     def _find_matching_file(self, responses):
@@ -80,6 +85,8 @@ class SongSearcher:
     def _matches_quality(self, file_ext, file_bitrate):
         if file_ext == "flac":
             return True
-        if file_ext == "mp3" and file_bitrate == TARGET_BITRATE:
-            return True
+        if file_ext == "mp3":
+            if not TARGET_BITRATES:
+                return True
+            return file_bitrate in TARGET_BITRATES
         return False

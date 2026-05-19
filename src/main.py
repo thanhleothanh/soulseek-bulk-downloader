@@ -3,10 +3,14 @@ import sys
 import threading
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
-from config import TEXT_FILE_PATH, MAX_WORKERS
 from client import ThreadSafeClient
 from searcher import SongSearcher
 from tracker import ResultTracker
+
+TEXT_FILE_PATH = "songs.txt"
+MAX_WORKERS = int(os.environ.get("MAX_WORKERS", "10"))
+SLSKD_HOST = os.environ.get("SLSKD_HOST", "http://localhost:5030")
+SLSKD_API_KEY = os.environ.get("SLSKD_API_KEY", "none")
 
 
 def load_songs():
@@ -35,11 +39,11 @@ def print_summary(successful, failed):
 
 def main():
     songs = load_songs()
-    print(f"📋 Loaded {len(songs)} songs from '{TEXT_FILE_PATH}'. Starting FLAC or MP3 320kbps scan...")
+    print(f"📋 Loaded {len(songs)} songs from '{TEXT_FILE_PATH}'. Starting quality-filtered scan...")
 
     client = ThreadSafeClient(
-        host=os.environ.get("SLSKD_HOST", "http://localhost:5030"),
-        api_key=os.environ.get("SLSKD_API_KEY", "none")
+        host=SLSKD_HOST,
+        api_key=SLSKD_API_KEY
     )
     searcher = SongSearcher(client)
     tracker = ResultTracker(client)

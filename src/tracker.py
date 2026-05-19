@@ -1,5 +1,9 @@
+import os
 import time
-from config import TRANSFER_CHECK_DELAY, SUCCESS_STATES
+
+
+TRANSFER_CHECK_DELAY = int(os.environ.get("TRANSFER_CHECK_DELAY", "5"))
+SUCCESS_STATES = {"Queued", "InProgress", "Complete", "Initializing", "Completed, Succeeded"}
 
 
 class ResultTracker:
@@ -14,7 +18,7 @@ class ResultTracker:
         final_failed = list(failed_to_enqueue)
 
         try:
-            all_transfers = self._client.get_all_transfers()
+            all_transfers = self._client.get_all_downloads()
             transfer_map = self._build_transfer_map(all_transfers)
 
             for song, info in enqueued.items():
