@@ -7,12 +7,11 @@ services:
     volumes:
       - ./slskd.yml:/app/slskd.yml:ro
       - ./downloads:/downloads
-      - ./slskd-data:/app/data
     ports:
       - "5030:5030"
       - "50300:50300"
     networks:
-      - slsk-net
+      - slskd-net
     restart: unless-stopped
     deploy:
       resources:
@@ -23,7 +22,7 @@ services:
           cpus: '0.5'
           memory: 512M
 
-  downloader:
+  soulseek-bulk-downloader:
     build:
       context: .
       dockerfile: Dockerfile
@@ -36,9 +35,9 @@ services:
     volumes:
       - ./songs.txt:/app/songs.txt
     networks:
-      - slsk-net
+      - slskd-net
 
 networks:
-  slsk-net:
+  slskd-net:
     driver: bridge
 

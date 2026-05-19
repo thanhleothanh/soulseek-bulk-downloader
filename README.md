@@ -5,7 +5,7 @@ A Docker-based bulk music downloader that searches and downloads tracks from the
 ## Features
 
 - Bulk download from a list of songs in `songs.txt`
-- Quality filter: accepts FLAC (any quality) or MP3 at 320kbps only
+- Quality filter: prioritizes M4A > MP3 (target bitrate) > MP3 (any) > FLAC
 - Runs entirely in Docker with slskd
 
 ## Prerequisites
@@ -16,7 +16,7 @@ A Docker-based bulk music downloader that searches and downloads tracks from the
 
 1. Run the setup script (first time only):
    ```bash
-   ./scripts/setup.sh
+   ./setup.sh
    ```
 
 2. Create `.env` from the example file (optional, defaults are provided):
@@ -29,23 +29,23 @@ A Docker-based bulk music downloader that searches and downloads tracks from the
    cp songs.txt.example songs.txt
    ```
 
-2. Add your song queries to `songs.txt` (one per line):
+4. Add your song queries to `songs.txt` (one per line):
    ```
    vertigo kisnou
    a breath of fresh air danisogen
    ```
 
-3. Start the services:
+5. Start the services:
    ```bash
-   ./scripts/run.sh
+   ./run.sh
    ```
 
-3. Monitor progress:
+6. Monitor progress:
    ```bash
-   docker compose logs -f downloader
+   docker compose logs -f soulseek-bulk-downloader
    ```
 
-4. Access the slskd web UI at `http://localhost:5030` to check download status.
+7. Access the slskd web UI at `http://localhost:5030` to check download status.
 
 ## Configuration
 
@@ -87,12 +87,10 @@ Leave it blank (`TARGET_BITRATES=`) to accept all MP3 bitrates. FLAC files are a
 ├── Dockerfile              # Docker image definition
 ├── requirements.txt        # Python dependencies
 ├── downloads/              # Downloaded files
-├── slskd-data/             # slskd persistent data
-├── scripts/
-│   ├── setup.sh            # One-time setup (creates required folders)
-│   ├── run.sh              # Start/rebuild and run the downloader
-│   ├── clean-up.sh         # Stop containers and wipe data
-│   └── flatten-downloads.sh # Flatten downloaded files
+├── setup.sh                # One-time setup (creates required folders)
+├── run.sh                  # Start/rebuild and run the downloader
+├── clean-up.sh             # Stop containers and wipe data
+├── flatten-downloads.sh    # Flatten downloaded files
 └── src/
     ├── main.py             # Main download script
     ├── searcher.py         # Song search logic
@@ -105,11 +103,13 @@ Leave it blank (`TARGET_BITRATES=`) to accept all MP3 bitrates. FLAC files are a
 - The downloader waits 15 seconds after each search to collect results from the network
 - Downloads are saved to the `./downloads` directory
 - slskd API key authentication is disabled by default in this setup
+- slskd is configured for download-only: no shared directories, distributed network disabled, minimal upload slots
+- Resource limits are set for slskd (1 CPU, 1GB RAM) to prevent OOM crashes. Increase if needed.
 
 ## Cleanup
 
 To stop containers and remove all downloads and slskd data:
 
 ```bash
-./scripts/clean-up.sh
+./clean-up.sh
 ```
