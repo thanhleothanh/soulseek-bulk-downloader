@@ -63,7 +63,7 @@ class SongSearcher:
                 if not self._matches_quality(file_ext, file_bitrate):
                     continue
 
-                if file_ext in ["mp3", "flac"]:
+                if file_ext in ["mp3", "flac", "m4a"]:
                     print(f"  📄 Found {file_ext.upper()}: {os.path.basename(file_filename)} | bitrate={file_bitrate}")
 
                 print(f"✅ Found {file_ext.upper()} match: {os.path.basename(file_filename)} from user '{username}'")
@@ -83,7 +83,7 @@ class SongSearcher:
         return None
 
     def _matches_quality(self, file_ext, file_bitrate):
-        if file_ext == "flac":
+        if file_ext in ["flac", "m4a"]:
             return True
         if file_ext == "mp3":
             if not TARGET_BITRATES:
