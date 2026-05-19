@@ -2,9 +2,9 @@ import os
 import time
 
 
-TARGET_BITRATES_RAW = os.environ.get("TARGET_BITRATES", "320").strip()
-TARGET_BITRATES = [int(x) for x in TARGET_BITRATES_RAW.split(",") if x.strip()] if TARGET_BITRATES_RAW else []
-SEARCH_WAIT_SECONDS = 15
+TARGET_BITRATES = [320, 256, 192, 128]
+SEARCH_POLL_INTERVAL = 10
+SEARCH_TIMEOUT = 100
 
 
 class SongSearcher:
@@ -20,17 +20,20 @@ class SongSearcher:
             print(f"[{song_query}] ❌ Failed to create search: {e}")
             return None
 
-        print(f"[{song_query}] ⏳ Waiting {SEARCH_WAIT_SECONDS}s for results...")
-        time.sleep(SEARCH_WAIT_SECONDS)
-
-        try:
-            responses = self._client.search_responses(search_id)
-        except Exception as e:
-            print(f"[{song_query}] ❌ Failed to get results: {e}")
-            return None
+        print(f"[{song_query}] ⏳ Waiting for results (up to {SEARCH_TIMEOUT}s)...")
+        responses = []
+        for _ in range(SEARCH_TIMEOUT // SEARCH_POLL_INTERVAL):
+            time.sleep(SEARCH_POLL_INTERVAL)
+            try:
+                responses = self._client.search_responses(search_id)
+            except Exception as e:
+                print(f"[{song_query}] ❌ Failed to get results: {e}")
+                return None
+            if responses:
+                break
 
         if not responses:
-            print(f"[{song_query}] ⚠️ No results found")
+            print(f"[{song_query}] ⚠️ No results found within timeout")
             return None
 
         format_counts = {"mp3": 0, "flac": 0, "m4a": 0}
@@ -50,19 +53,14 @@ class SongSearcher:
         return None
 
     def _find_matching_file(self, responses, song_query):
-        result = self._try_enqueue(responses, song_query, lambda ext, br: ext == "m4a")
-        if result:
-            return result
-
         for target_br in TARGET_BITRATES:
             result = self._try_enqueue(responses, song_query, lambda ext, br, t=target_br: ext == "mp3" and br == t)
             if result:
                 return result
 
-        if not TARGET_BITRATES:
-            result = self._try_enqueue(responses, song_query, lambda ext, br: ext == "mp3")
-            if result:
-                return result
+        result = self._try_enqueue(responses, song_query, lambda ext, br: ext == "m4a")
+        if result:
+            return result
 
         result = self._try_enqueue(responses, song_query, lambda ext, br: ext == "flac")
         if result:

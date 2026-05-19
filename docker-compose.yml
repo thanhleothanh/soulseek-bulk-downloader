@@ -22,14 +22,14 @@ services:
           cpus: '0.5'
           memory: 512M
 
-  soulseek-bulk-downloader:
+  downloader:
     build:
       context: .
       dockerfile: Dockerfile
     container_name: soulseek-bulk-downloader
     depends_on:
       - slskd
-    command: sh -c "sleep 15 && python main.py"
+    command: sh -c "python wait-for-slskd.py && python main.py"
     env_file:
       - .env
     volumes:

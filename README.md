@@ -5,7 +5,7 @@ A Docker-based bulk music downloader that searches and downloads tracks from the
 ## Features
 
 - Bulk download from a list of songs in `songs.txt`
-- Quality filter: prioritizes M4A > MP3 (target bitrate) > MP3 (any) > FLAC
+- Quality filter: prioritizes MP3 (320→256→192→128 kbps) > M4A > FLAC
 - Runs entirely in Docker with slskd
 
 ## Prerequisites
@@ -42,7 +42,7 @@ A Docker-based bulk music downloader that searches and downloads tracks from the
 
 6. Monitor progress:
    ```bash
-   docker compose logs -f soulseek-bulk-downloader
+   docker compose logs -f downloader
    ```
 
 7. Access the slskd web UI at `http://localhost:5030` to check download status.
@@ -57,13 +57,7 @@ Edit `slskd.yml` to configure your Soulseek username, password, and download dir
 
 ### Quality Filter
 
-Edit `.env` to change accepted MP3 bitrates:
-
-```
-TARGET_BITRATES=320,256
-```
-
-Leave it blank (`TARGET_BITRATES=`) to accept all MP3 bitrates. FLAC files are always accepted regardless of this setting.
+Accepts MP3 (320→256→192→128 kbps), then M4A, then FLAC. Hardcoded in `searcher.py`.
 
 ### Environment Variables
 
@@ -71,7 +65,6 @@ Leave it blank (`TARGET_BITRATES=`) to accept all MP3 bitrates. FLAC files are a
 |---|---|---|
 | `SLSKD_HOST` | `http://slskd:5030` | slskd API endpoint |
 | `SLSKD_API_KEY` | `none` | API key (if enabled in slskd) |
-| `TARGET_BITRATES` | `320` | Comma-separated MP3 bitrates to accept (blank = all) |
 | `MAX_WORKERS` | `10` | Concurrent song searches |
 
 ## File Structure
@@ -95,16 +88,18 @@ Leave it blank (`TARGET_BITRATES=`) to accept all MP3 bitrates. FLAC files are a
     ├── main.py             # Main download script
     ├── searcher.py         # Song search logic
     ├── client.py           # Thread-safe slskd API wrapper
-    └── tracker.py          # Transfer status verification
+    ├── tracker.py          # Transfer status verification
+    └── wait-for-slskd.py   # Waits for slskd to be ready before starting
 ```
 
 ## Notes
 
-- The downloader waits 15 seconds after each search to collect results from the network
+- The downloader polls for search results every 10s (up to 100s) to collect responses from the network
+- Waits for slskd to be logged in before starting searches (120s timeout)
 - Downloads are saved to the `./downloads` directory
 - slskd API key authentication is disabled by default in this setup
 - slskd is configured for download-only: no shared directories, distributed network disabled, minimal upload slots
-- Resource limits are set for slskd (1 CPU, 1GB RAM) to prevent OOM crashes. Increase if needed.
+- Resource limits are set for slskd (1 CPU, 1GB RAM) to prevent OOM crashes
 
 ## Cleanup
 
