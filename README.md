@@ -5,7 +5,7 @@ A Docker-based bulk music downloader that searches and downloads tracks from the
 ## Features
 
 - Bulk download from a list of songs in `songs.txt`
-- Quality filter: prioritizes MP3 (320→256→192→128 kbps) > M4A > FLAC
+- Quality filter: configurable format priority with bitrate ladder for MP3
 - Runs entirely in Docker with slskd
 
 ## Prerequisites
@@ -57,12 +57,14 @@ Edit `slskd.yml` to configure your Soulseek username, password, and download dir
 
 ### Quality Filter
 
-Accepts MP3 (320→256→192→128 kbps), then M4A, then FLAC. Hardcoded in `searcher.py`.
+Default priority: FLAC → M4A → MP3 (320→256→192→128 kbps bitrate ladder) → OGG.
+Configured via `DEFAULT_FORMAT_PRIORITY` and `DEFAULT_BITRATE_PREFERENCE` in `matcher.py`.
 
 ### Environment Variables
 
 | Variable | Default | Description |
 |---|---|---|
+| `SONGS_FILE` | `songs.txt` | Path to song list file |
 | `SLSKD_HOST` | `http://slskd:5030` | slskd API endpoint |
 | `SLSKD_API_KEY` | `none` | API key (if enabled in slskd) |
 | `MAX_WORKERS` | `10` | Concurrent song searches |
@@ -89,15 +91,18 @@ Accepts MP3 (320→256→192→128 kbps), then M4A, then FLAC. Hardcoded in `sea
 ├── flac-to-mp3.sh          # Convert FLAC to MP3 (320kbps)
 ├── ogg-to-mp3.sh           # Convert OGG to MP3 (320kbps)
 └── src/
-    ├── main.py             # Main download script
-    ├── searcher.py         # Song search logic
+    ├── main.py             # Orchestrator
+    ├── searcher.py         # Search lifecycle (submit + poll)
+    ├── matcher.py          # File format/bitrate matching strategy
     ├── client.py           # Thread-safe slskd API wrapper
     ├── tracker.py          # Transfer status verification
+    ├── presenter.py        # All user output
     └── wait-for-slskd.py   # Waits for slskd to be ready before starting
 ```
 
 ## Notes
 
+- Quality filter default order: FLAC → M4A → MP3 (with bitrate ladder 320→256→192→128) → OGG. Edit `DEFAULT_FORMAT_PRIORITY` in `matcher.py` to change.
 - The downloader polls for search results every 10s (up to 100s) to collect responses from the network
 - Waits for slskd to be logged in before starting searches (120s timeout)
 - Downloads are saved to the `./downloads` directory
