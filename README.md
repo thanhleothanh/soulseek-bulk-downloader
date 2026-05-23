@@ -80,10 +80,14 @@ Accepts MP3 (320→256→192→128 kbps), then M4A, then FLAC. Hardcoded in `sea
 ├── Dockerfile              # Docker image definition
 ├── requirements.txt        # Python dependencies
 ├── downloads/              # Downloaded files
+├── logs/                   # Downloader logs
 ├── setup.sh                # One-time setup (creates required folders)
 ├── run.sh                  # Start/rebuild and run the downloader
 ├── clean-up.sh             # Stop containers and wipe data
-├── flatten-downloads.sh    # Flatten downloaded files
+├── flatten-downloads.sh    # Flatten downloaded files to a single directory
+├── find-duplicates.sh      # Find potential duplicate files by duration
+├── flac-to-mp3.sh          # Convert FLAC to MP3 (320kbps)
+├── ogg-to-mp3.sh           # Convert OGG to MP3 (320kbps)
 └── src/
     ├── main.py             # Main download script
     ├── searcher.py         # Song search logic
